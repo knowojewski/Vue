@@ -15,6 +15,7 @@ import Sidebar from './components/Sidebar';
 import TopHeader from './components/TopHeader';
 import SubscribeSection from './components/SubscribeSection';
 import FooterSection from './components/Footer';
+import { mapActions } from 'vuex';
 
 export default {
   components: {
@@ -22,6 +23,12 @@ export default {
     TopHeader,
     SubscribeSection,
     FooterSection
+  },
+  methods: {
+    ...mapActions(['fetchProducts'])
+  },
+  created() {
+    this.fetchProducts();
   }
 }
 </script>

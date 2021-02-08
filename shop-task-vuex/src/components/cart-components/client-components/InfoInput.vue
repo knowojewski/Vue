@@ -20,19 +20,16 @@
                 <i v-if="infoValidate === false" class="fa fa-times"></i>
                 <i v-if="infoValidate === true" class="fa fa-check"></i>
                 <div v-if="inputInfo === 'Card number'">
-                    <img v-if="fieldsValidate.cardNumber === true && cardImage.visa === true" src="../../../assets/card-icons/visa.png" alt="Visa Icon" title="Visa">
-                    <img v-if="fieldsValidate.cardNumber === true && cardImage.masterCard === true" src="../../../assets/card-icons/mastercard.png" alt="Mastercard Icon" title="MasterCard">
-                    <img v-if="fieldsValidate.cardNumber === true && cardImage.discover === true" src="../../../assets/card-icons/discover.png" alt="Discover Icon" title="Discover">
-                    <img v-if="fieldsValidate.cardNumber === true && cardImage.maestro === true" src="../../../assets/card-icons/maestro.png" alt="Maestro Icon" title="Maestro">
-                    <img v-if="fieldsValidate.cardNumber === true && cardImage.JCB === true" src="../../../assets/card-icons/jcb.png" alt="JCB Icon" title="JCB">
-                    <img v-if="fieldsValidate.cardNumber === true && cardImage.dinersCarteBlanche === true" src="../../../assets/card-icons/carte-blanche.png" alt="Carte Blanche Icon" title="Carte Blanche">
-                    <img v-if="fieldsValidate.cardNumber === true && cardImage.dinersInternational === true" src="../../../assets/card-icons/diners-club.png" alt="Diners International Icon" title="Diners International">
-                    <img v-if="fieldsValidate.cardNumber === true && cardImage.amex === true" src="../../../assets/card-icons/american-express.png" alt="American Express Icon" title="American Express">
-                    <img class="instapayment" v-if="fieldsValidate.cardNumber === true && cardImage.instaPayment === true" src="../../../assets/card-icons/instapayment.jpg" alt="Instapayment Icon" title="Instapayment">
+                    <img 
+                    :class="{'instapayment': cardImageSrc.title === 'Insta Payment'}" 
+                    v-show="fieldsValidate.cardNumber === true" 
+                    :src="cardImageSrc.src" 
+                    alt="Card Icon" 
+                    :title="cardImageSrc.title"
+                    >
                 </div>
             </div>
         </div>
-        {{ addressInfo }}
     </div>
 </template>
 
@@ -43,11 +40,17 @@ import { Getter, Action, Mutation } from "vuex-class";
 @Component
 export default class InfoInput extends Vue {
     @Prop(String) inputInfo;
-    @Prop(Boolean) invoice;
-    @Getter address;
+    @Prop(Boolean) invoiceCheck;
+    @Prop(String) addressProp;
+    @Prop(Boolean) validate;
+    @Getter invoiceForm;
     @Getter fieldsValidate;
+    @Getter invoiceFieldsValidate;
+    @Getter invoiceSameAddress;
     @Getter cardImage;
     @Getter clearFields;
+    @Getter clearInvoiceFields;
+    @Getter cardImageSrc;
     @Action validateFirstName;
     @Action validateLastName;
     @Action validateCountry;
@@ -59,7 +62,11 @@ export default class InfoInput extends Vue {
     @Action validateCardNumber;
     @Action validateCardExpireDate;
     @Action validateCardCode;
+    @Action validateCompany;
+    @Action validateNIP;
     @Action validateInputs;
+    @Action validateInvoiceInputs;
+    @Action validateInvoiceForm;
     @Action validateBothForms;
 
     addressInfo = null;
@@ -67,41 +74,20 @@ export default class InfoInput extends Vue {
 
     @Watch("addressInfo")
     onInputChange(val, oldVal){
-        if(this.inputInfo === 'First name' && !this.invoice) {
-            this.address.firstName = this.addressInfo;
-
-            if(val !== null) {
-                this.validateFirstName(val);
-            }
-            
+        if(this.inputInfo === 'First name' && !this.invoiceCheck) {
+            this.validateFirstName({value: val, addressInfo: this.addressInfo});
             this.infoValidate = this.fieldsValidate.firstName;
-            this.validateInputs();
-            this.validateBothForms();
 
-        } else if(this.inputInfo === 'Last name' && !this.invoice) {
-            this.address.lastName = this.addressInfo;
-
-            if(val !== null) {
-                this.validateLastName(val);
-            }
-
+        } else if(this.inputInfo === 'Last name' && !this.invoiceCheck) {
+            this.validateLastName({value: val, addressInfo: this.addressInfo});
             this.infoValidate = this.fieldsValidate.lastName;
-            this.validateInputs();
-            this.validateBothForms();
 
-        } else if(this.inputInfo === 'Country' && !this.invoice) {
-            this.address.country = this.addressInfo;
-
-            if(val !== null) {
-                this.validateCountry(val);
-            }
-
+        } else if(this.inputInfo === 'Country' && !this.invoiceCheck) {
+            this.validateCountry({value: val, invoice: false, addressInfo: this.addressInfo});
             this.infoValidate = this.fieldsValidate.country;
-            this.validateInputs();
-            this.validateBothForms();
 
-        } else if(this.inputInfo === 'Zip code' && !this.invoice) {
-            this.address.zipCode = this.addressInfo;
+        } else if(this.inputInfo === 'Zip code' && !this.invoiceCheck) {
+            this.validateZipCode({value: val, invoice: false, addressInfo: this.addressInfo});
             const regex = /^[0-9]* *-? *[0-9]*$/;
 
             if(val !== null) {
@@ -115,78 +101,47 @@ export default class InfoInput extends Vue {
                     this.addressInfo = this.addressInfo.concat(dash);
                     }
                 }
-
-                this.validateZipCode(val);
             }
 
             this.infoValidate = this.fieldsValidate.zipCode;
-            this.validateInputs();
-            this.validateBothForms();
         
-        } else if(this.inputInfo === 'City' && !this.invoice) {
-            this.address.city = this.addressInfo;
-
-            if(val !== null) {
-                this.validateCity(val);
-            }
-
+        } else if(this.inputInfo === 'City' && !this.invoiceCheck) {
+            this.validateCity({value: val, invoice: false, addressInfo: this.addressInfo});
             this.infoValidate = this.fieldsValidate.city;
-            this.validateInputs();
-            this.validateBothForms();
 
-        } else if(this.inputInfo === 'Street and House number' && !this.invoice) {
-            this.address.street = this.addressInfo;
-
-            if(val !== null) {
-                this.validateStreet(val);
-            }
-
+        } else if(this.inputInfo === 'Street and House number' && !this.invoiceCheck) {
+            this.validateStreet({value: val, invoice: false, addressInfo: this.addressInfo});
             this.infoValidate = this.fieldsValidate.street;
-            this.validateInputs();
-            this.validateBothForms();
  
-        } else if(this.inputInfo === 'Phone number' && !this.invoice) {
-            this.address.phoneNumber = this.addressInfo;
+        } else if(this.inputInfo === 'Phone number' && !this.invoiceCheck) {
+            this.validatePhone({value: val, invoice: false, addressInfo: this.addressInfo});
 
             if(val !== null) {
-                this.validatePhone(val);
                 if(val.length > 9) {
                     this.addressInfo = oldVal;
                 }
             }
 
             this.infoValidate = this.fieldsValidate.phoneNumber;
-            this.validateInputs();
-            this.validateBothForms();
 
-        } else if(this.inputInfo === 'E-mail' && !this.invoice) {
-            this.address.email = this.addressInfo;
-
-            if(val !== null) {
-                this.validateEmail(val);
-            }
-
+        } else if(this.inputInfo === 'E-mail' && !this.invoiceCheck) {
+            this.validateEmail({value: val, invoice: false, addressInfo: this.addressInfo});
             this.infoValidate = this.fieldsValidate.email;
-            this.validateInputs();
-            this.validateBothForms();
  
-        } else if(this.inputInfo === 'Card number' && !this.invoice) {
-            this.address.cardNumber = this.addressInfo;
+        } else if(this.inputInfo === 'Card number' && !this.invoiceCheck) {
+            this.validateCardNumber({value: val, addressInfo: this.addressInfo});
 
             if(val !== null) {
-                this.validateCardNumber(val);
                 if(val.length > 19) {
                     this.addressInfo = oldVal;
                 }
             }
 
             this.infoValidate = this.fieldsValidate.cardNumber;
-            this.validateInputs();
-            this.validateBothForms();
 
-        } else if(this.inputInfo === 'MM/YY' && !this.invoice) {
-            this.address.expireDate = this.addressInfo;
+        } else if(this.inputInfo === 'MM/YY' && !this.invoiceCheck) {
             const regex = /^[0-9]*\/?[0-9]*$/;
+            this.validateCardExpireDate({value: val, addressInfo: this.addressInfo});
 
             if(val !== null) {
                 const slash = '/';
@@ -202,28 +157,77 @@ export default class InfoInput extends Vue {
                 if(val.length > 5) {
                     this.addressInfo = oldVal;
                 }
-
-                this.validateCardExpireDate(val);
             }
 
             this.infoValidate = this.fieldsValidate.expireDate;
-            this.validateInputs();
-            this.validateBothForms();
  
-        } else if(this.inputInfo === 'CVV/CVC' && !this.invoice) {
-            this.address.specialCode = this.addressInfo;
-
+        } else if(this.inputInfo === 'CVV/CVC' && !this.invoiceCheck) {
+            this.validateCardCode({value: val, addressInfo: this.addressInfo});
             if(val !== null) {
-                this.validateCardCode(val);
                 if(val.length > 3) {
                     this.addressInfo = oldVal;
                 }
             }
 
             this.infoValidate = this.fieldsValidate.specialCode;
-            this.validateInputs();
-            this.validateBothForms();
 
+        } else if (this.inputInfo === 'Company name' && this.invoiceCheck) {
+            this.validateCompany(this.addressInfo);
+
+        } else if(this.inputInfo === 'NIP' && this.invoiceCheck) {
+            this.validateNIP({value: val, addressInfo: this.addressInfo});
+
+            if(val !== null) {
+                if(val.length > 10) {
+                    this.addressInfo = oldVal;
+                }
+            }
+
+            this.infoValidate = this.invoiceFieldsValidate.NIP;
+
+        } else if(this.inputInfo === 'Country' && this.invoiceCheck) {
+            this.validateCountry({value: val, invoice: true, addressInfo: this.addressInfo});
+            this.infoValidate = this.invoiceFieldsValidate.country;
+
+        } else if(this.inputInfo === 'Zip code' && this.invoiceCheck) {
+            const regex = /^[0-9]* *-? *[0-9]*$/;
+            this.validateZipCode({value: val, invoice: true, addressInfo: this.addressInfo});
+
+            if(val !== null) {
+                const dash = " - ";
+
+                if(!val.match(regex) || val.length > 8) {
+                    this.addressInfo = oldVal;
+                } else {
+                    if (val.length == 2 && oldVal.length == 1) {
+                    this.addressInfo = this.addressInfo.concat(dash);
+                    }
+                }
+
+            }
+
+            this.infoValidate = this.invoiceFieldsValidate.zipCode;
+
+        } else if(this.inputInfo === 'City' && this.invoiceCheck) {
+            this.validateCity({value: val, invoice: true, addressInfo: this.addressInfo});
+            this.infoValidate = this.invoiceFieldsValidate.city;
+
+        } else if(this.inputInfo === 'Street and building number' && this.invoiceCheck) {
+            this.validateStreet({value: val, invoice: true, addressInfo: this.addressInfo});
+            this.infoValidate = this.invoiceFieldsValidate.street;
+
+        } else if(this.inputInfo === 'Phone number' && this.invoiceCheck) {
+            this.validatePhone({value: val, invoice: true, addressInfo: this.addressInfo});
+
+            if(val !== null && val.length > 9) {
+                this.addressInfo = oldVal;
+            }
+
+            this.infoValidate = this.invoiceFieldsValidate.phoneNumber;
+
+        } else if(this.inputInfo === 'E-mail' && this.invoiceCheck) {
+            this.validateEmail({value: val, invoice: true, addressInfo: this.addressInfo});
+            this.infoValidate = this.invoiceFieldsValidate.email;
         }
     }
 
@@ -232,45 +236,29 @@ export default class InfoInput extends Vue {
         this.getInputInfos();
     }
 
+    @Watch("clearInvoiceFields")
+    onInvoiceClear(){
+        this.getInputInfos();
+    }
+
+    @Watch("invoiceForm")
+    onInvoiceFormToggle(){
+        this.getInputInfos();
+    }
+
+    @Watch("invoiceSameAddress")
+    onInvoiceSameAddressToggle(){
+        this.getInputInfos();
+    }
+
     getInputInfos() {
-        if(this.inputInfo === 'First name' && !this.invoice) {
-            this.addressInfo = this.address.firstName;
-            this.infoValidate = this.fieldsValidate.firstName;
-        } else if(this.inputInfo === 'Last name' && !this.invoice) {
-            this.addressInfo = this.address.lastName;
-            this.infoValidate = this.fieldsValidate.lastName;
-        } else if(this.inputInfo === 'Country' && !this.invoice) {
-            this.addressInfo = this.address.country;
-            this.infoValidate = this.fieldsValidate.country;
-        } else if(this.inputInfo === 'Zip code' && !this.invoice) {
-            this.addressInfo = this.address.zipCode;
-            this.infoValidate = this.fieldsValidate.zipCode;
-        } else if(this.inputInfo === 'City' && !this.invoice) {
-            this.addressInfo = this.address.city;
-            this.infoValidate = this.fieldsValidate.city;
-        } else if(this.inputInfo === 'Street and House number' && !this.invoice) {
-            this.addressInfo = this.address.street;
-            this.infoValidate = this.fieldsValidate.street;
-        } else if(this.inputInfo === 'Phone number' && !this.invoice) {
-            this.addressInfo = this.address.phoneNumber;
-            this.infoValidate = this.fieldsValidate.phoneNumber;
-        } else if(this.inputInfo === 'E-mail' && !this.invoice) {
-            this.addressInfo = this.address.email;
-            this.infoValidate = this.fieldsValidate.email;
-        } else if(this.inputInfo === 'Card number' && !this.invoice) {
-            this.addressInfo = this.address.cardNumber;
-            this.infoValidate = this.fieldsValidate.cardNumber;
-        } else if(this.inputInfo === 'MM/YY' && !this.invoice) {
-            this.addressInfo = this.address.expireDate;
-            this.infoValidate = this.fieldsValidate.expireDate;
-        } else if(this.inputInfo === 'CVV/CVC' && !this.invoice) {
-            this.addressInfo = this.address.specialCode;
-            this.infoValidate = this.fieldsValidate.specialCode;
-        }
+        this.addressInfo = this.addressProp;
+        this.infoValidate = this.validate; 
     }
 
     inputType() {
-        if(this.inputInfo === 'Phone number' || this.inputInfo === 'Card number' || this.inputInfo === 'CVV/CVC') {
+        if(this.inputInfo === 'Phone number' || this.inputInfo === 'Card number' || 
+            this.inputInfo === 'CVV/CVC' || this.inputInfo === 'NIP') {
             return 'number';
         } else {
             return 'text';
@@ -278,7 +266,8 @@ export default class InfoInput extends Vue {
     }
 
     inputClass() {
-        if(this.inputInfo === 'Phone number' || this.inputInfo === 'Card number' || this.inputInfo === 'CVV/CVC') {
+        if(this.inputInfo === 'Phone number' || this.inputInfo === 'Card number' || 
+            this.inputInfo === 'CVV/CVC' || this.inputInfo === 'NIP') {
             return true;
         } else {
             return false;
@@ -286,7 +275,7 @@ export default class InfoInput extends Vue {
     }
     
     created() {
-        this.getInputInfos();
+        this.getInputInfos();  
     }
 }
 </script>

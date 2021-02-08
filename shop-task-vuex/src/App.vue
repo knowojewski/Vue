@@ -1,11 +1,14 @@
 <template>
   <div id="app">
-    <sidebar></sidebar>
+    <Alert />
+    <ErrorModal  />
+    <Sidebar />
     <div class="w3-main">
-      <top-header></top-header>
+      <div class="w3-hide-large"></div>
+      <TopHeader />
       <router-view/>
-      <subscribe-section></subscribe-section>
-      <footer-section></footer-section>
+      <SubscribeSection />
+      <FooterSection />
     </div>
   </div>
 </template>
@@ -15,20 +18,27 @@ import Sidebar from './components/Sidebar';
 import TopHeader from './components/TopHeader';
 import SubscribeSection from './components/SubscribeSection';
 import FooterSection from './components/Footer';
-import { mapActions } from 'vuex';
+import Alert from './components/Alert';
+import ErrorModal from './components/ErrorModal';
+import { Action } from 'vuex-class';
+import Vue from 'vue';
+import Component from 'vue-class-component';
 
-export default {
+@Component({
   components: {
     Sidebar,
     TopHeader,
     SubscribeSection,
-    FooterSection
-  },
-  methods: {
-    ...mapActions(['fetchProducts'])
-  },
+    FooterSection,
+    Alert,
+    ErrorModal
+  }
+})
+export default class App extends Vue {
+  @Action loadCart
+
   created() {
-    this.fetchProducts();
+    this.loadCart();
   }
 }
 </script>
@@ -36,5 +46,11 @@ export default {
 <style scoped>
 .w3-main {
   margin-left: 250px;
+}
+</style>
+
+<style>
+.w3-button {
+  transition: color .3s, background .3s;
 }
 </style>

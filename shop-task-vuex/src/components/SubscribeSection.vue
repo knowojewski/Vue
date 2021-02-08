@@ -8,9 +8,11 @@
 </template>
 
 <script>
-export default {
-    name: 'SubscribeSection'
-}
+import Vue from 'vue';
+import Component from 'vue-class-component';
+
+@Component
+export default class SubscribeSection extends Vue {}
 </script>
 
 <style>

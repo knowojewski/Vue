@@ -1,19 +1,19 @@
 <template>
   <div class="shop-list">
-    <image-header></image-header>
-    <div class="w3-container w3-text-grey" id="jeans">
-      <p>{{ this.allProducts.length }} items</p>
+    <ImageHeader />
+    <div class="w3-container w3-text-grey" id="products">
+      <p>{{ allProducts.length }} items</p>
     </div>
     <div class="w3-row w3-grayscale items-list">
       <div v-for="product in allProducts" :key="product.id" class="product">
-        <router-link class="product__link" v-bind:to="`product/${product.id}`">
+        <router-link class="product__link" :to="`product/${product.id}`">
           <h4 class="product__title">{{ product.product_name }}</h4>
         </router-link>
-        <img v-bind:src="product.image" alt="Product image">
+        <img :src="product.image" alt="Product image">
         <p class="product__description">{{ product.short_description}}</p>
         <div class="product__bottom">
           <p class="product__price">{{ product.price }}</p>
-          <button class="product__btn"><span>Add to </span><i class="fa fa-shopping-cart"></i></button>
+          <button @click.prevent="addToCart(product)" class="product__btn"><span>Add to </span><i class="fa fa-shopping-cart"></i></button>
         </div>
       </div>
     </div>
@@ -21,26 +21,30 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex';
-import { mapGetters } from 'vuex';
-import ImageHeader from '../components/ImageHeader'
+import ImageHeader from '../components/ImageHeader';
+import Component from 'vue-class-component';
+import Vue from 'vue';
+import {Action, Getter} from 'vuex-class';
 
-export default {
-    name: 'ShopList',
-    components: {
-      ImageHeader
-    },
-    methods: {
-      ...mapActions(['fetchProducts'])
-    },
-    computed: {
-      ...mapGetters(['allProducts'])
-    }
+@Component({
+  components: {
+    ImageHeader
+  }
+})
+export default class ShopList extends Vue {
+  @Action addToCart
+  @Action fetchProducts
+  @Getter allProducts
+
+  created() {
+    this.fetchProducts();
+  }
 }
 </script>
 
 <style scoped>
 .items-list {
+  padding: 10px;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -152,6 +156,37 @@ export default {
 .product__btn:hover span {
   opacity: 1;
   letter-spacing: 0px;
+}
+
+@media ( max-width: 800px ) {
+  .items-list {
+    justify-content: space-evenly;
+  }
+
+  .product {
+    width: 260px;
+  }
+}
+
+@media ( max-width: 600px ) {
+  .product {
+    width: 220px;
+  }
+
+  .product__description {
+    font-size: 14px;
+  }
+}
+
+@media ( max-width: 500px ) {
+  .product {
+    width: 300px;
+    height: 450px;
+  }
+
+  .product__description {
+    font-size: 16px;
+  }
 }
 
 </style>
